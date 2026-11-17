@@ -28,7 +28,15 @@ public sealed class OllamaAssistantProvider : IAssistantProvider
         AppSettings settings,
         CancellationToken ct = default)
     {
-        IChatClient client = new OllamaApiClient(new Uri(settings.BaseUrl.TrimEnd('/') + "/"));
+        // OllamaSharp's default HttpClient times out after 100 s; local models can easily
+        // need longer to load and generate, so use a client without a request timeout.
+        var baseUrl = string.IsNullOrWhiteSpace(settings.BaseUrl) ? "http://localhost:11434" : settings.BaseUrl;
+        using var http = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = System.Threading.Timeout.InfiniteTimeSpan
+        };
+        using IChatClient client = new OllamaApiClient(http);
         var messages = ToChatMessages(conversation);
         var options = new ChatOptions { ModelId = settings.Model, Temperature = 0.2f };
 

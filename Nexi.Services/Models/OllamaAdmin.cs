@@ -21,19 +21,31 @@ public sealed class OllamaAdmin : IOllamaAdmin
         _logger = logger;
     }
 
-    private async Task<OllamaApiClient> CreateClientAsync(CancellationToken ct)
+    // OllamaSharp's default HttpClient times out after 100 s, which kills long model pulls
+    // and slow local generations - always pass a client with an explicit timeout.
+    private async Task<(OllamaApiClient Client, HttpClient Http)> CreateClientAsync(CancellationToken ct, TimeSpan? timeout = null)
     {
         var settings = await _store.GetSettingsAsync(ct);
         var baseUrl = string.IsNullOrWhiteSpace(settings.BaseUrl) ? "http://localhost:11434" : settings.BaseUrl;
-        return new OllamaApiClient(new Uri(baseUrl.TrimEnd('/') + "/"));
+        var http = new HttpClient
+        {
+            BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/"),
+            Timeout = timeout ?? TimeSpan.FromHours(1)
+        };
+        return (new OllamaApiClient(http), http);
     }
 
     public async Task<bool> IsServerReachableAsync(CancellationToken ct = default)
     {
         try
         {
-            var client = await CreateClientAsync(ct);
-            await client.ListLocalModelsAsync(ct);
+            var (client, http) = await CreateClientAsync(ct, TimeSpan.FromSeconds(10));
+            using (http)
+            using (client)
+            {
+                await client.ListLocalModelsAsync(ct);
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -45,42 +57,54 @@ public sealed class OllamaAdmin : IOllamaAdmin
 
     public async Task<IReadOnlyList<InstalledModelInfo>> ListModelsAsync(CancellationToken ct = default)
     {
-        var client = await CreateClientAsync(ct);
-        var models = await client.ListLocalModelsAsync(ct);
-        return models
-            .Select(m => new InstalledModelInfo(m.Name, m.Size, m.ModifiedAt, ModelSource.Ollama))
-            .OrderBy(m => m.Name)
-            .ToList();
+        var (client, http) = await CreateClientAsync(ct);
+        using (http)
+        using (client)
+        {
+            var models = await client.ListLocalModelsAsync(ct);
+            return models
+                .Select(m => new InstalledModelInfo(m.Name, m.Size, m.ModifiedAt, ModelSource.Ollama))
+                .OrderBy(m => m.Name)
+                .ToList();
+        }
     }
 
     public async IAsyncEnumerable<ModelDownloadProgress> PullModelAsync(
         string name,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
-        var client = await CreateClientAsync(ct);
-        _logger.LogInformation("Pulling Ollama model {Model}", name);
-
-        await foreach (var response in client.PullModelAsync(new PullModelRequest { Model = name }, ct))
+        var (client, http) = await CreateClientAsync(ct);
+        using (http)
+        using (client)
         {
-            if (response is null)
-            {
-                continue;
-            }
+            _logger.LogInformation("Pulling Ollama model {Model}", name);
 
-            yield return new ModelDownloadProgress(
-                name,
-                (int)Math.Clamp(response.Percent, 0, 100),
-                response.Status ?? "",
-                response.Completed,
-                response.Total);
+            await foreach (var response in client.PullModelAsync(new PullModelRequest { Model = name }, ct))
+            {
+                if (response is null)
+                {
+                    continue;
+                }
+
+                yield return new ModelDownloadProgress(
+                    name,
+                    (int)Math.Clamp(response.Percent, 0, 100),
+                    response.Status ?? "",
+                    response.Completed,
+                    response.Total);
+            }
         }
     }
 
     public async Task DeleteModelAsync(string name, CancellationToken ct = default)
     {
-        var client = await CreateClientAsync(ct);
-        _logger.LogInformation("Deleting Ollama model {Model}", name);
-        await client.DeleteModelAsync(new DeleteModelRequest { Model = name }, ct);
+        var (client, http) = await CreateClientAsync(ct);
+        using (http)
+        using (client)
+        {
+            _logger.LogInformation("Deleting Ollama model {Model}", name);
+            await client.DeleteModelAsync(new DeleteModelRequest { Model = name }, ct);
+        }
     }
 
     public async IAsyncEnumerable<ModelDownloadProgress> ImportGgufAsync(
@@ -93,7 +117,7 @@ public sealed class OllamaAdmin : IOllamaAdmin
         _logger.LogInformation("Importing GGUF {Path} into Ollama as {Model}", ggufPath, name);
 
         // OllamaSharp 5 has no Modelfile field on CreateModelRequest, so post the create call directly.
-        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+        using var http = new HttpClient { Timeout = TimeSpan.FromHours(1) };
         var payload = new { model = name, modelfile = $"FROM {ggufPath}", stream = true };
         using var response = await http.PostAsJsonAsync($"{baseUrl}/api/create", payload, ct);
         response.EnsureSuccessStatusCode();
