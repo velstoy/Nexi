@@ -1,0 +1,323 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:material="using:Material.Icons.Avalonia"
+             xmlns:vm="using:Nexi.UI.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nexi.UI.Views.ModelsView"
+             x:DataType="vm:ModelsViewModel"
+             Name="ModelsViewControl">
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Header -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource SystemChromeMediumColor}"
+            BoxShadow="0 2 8 0 #30000000">
+      <Grid ColumnDefinitions="*,Auto" Margin="32,24">
+        <StackPanel Grid.Column="0" Spacing="8">
+          <TextBlock Text="Models"
+                   FontFamily="Cascadia Code"
+                   FontSize="32"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource SystemAccentColor}"/>
+          <TextBlock Text="Download and manage AI models for Nexi"
+                   FontSize="16"
+                   Opacity="0.7"/>
+        </StackPanel>
+        <Button Grid.Column="1"
+                Command="{Binding RefreshModelsCommand}"
+                Classes="TransparentButton"
+                ToolTip.Tip="Refresh model status">
+          <material:MaterialIcon Kind="Refresh" Width="24" Height="24"/>
+        </Button>
+      </Grid>
+    </Border>
+
+    <!-- Content Area -->
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Margin="32" Spacing="16">
+        <!-- Status Messages -->
+        <Border Background="#FFDDDD"
+                BorderBrush="#FF5555"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="16"
+                IsVisible="{Binding HasError}">
+          <TextBlock Text="{Binding ErrorMessage}"
+                   Foreground="#CC0000"
+                   TextWrapping="Wrap"/>
+        </Border>
+
+        <Border Background="#DDFFDD"
+                BorderBrush="#55AA55"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="16"
+                IsVisible="{Binding HasStatusMessage}">
+          <TextBlock Text="{Binding StatusMessage}"
+                   Foreground="#006600"
+                   TextWrapping="Wrap"/>
+        </Border>
+
+        <!-- Loading Indicator -->
+        <ProgressBar IsIndeterminate="True"
+                   Height="4"
+                   IsVisible="{Binding IsLoading}"/>
+
+        <!-- Ollama section -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000"
+                Padding="20">
+          <StackPanel Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <material:MaterialIcon Kind="Brain" Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="Local runtime (Ollama)"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+              <Border Width="12" Height="12"
+                      CornerRadius="6"
+                      VerticalAlignment="Center"
+                      Background="{Binding OllamaReachable, Converter={StaticResource BoolToStatusBrushConverter}, FallbackValue=#e74c3c}"/>
+            </StackPanel>
+            <TextBlock Text="Pull any model by name (e.g. llama3.2, mistral, phi4) from the Ollama registry, or manage installed models."
+                     Opacity="0.7" TextWrapping="Wrap"/>
+
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding NewModelName}"
+                       PlaceholderText="Model name to install, e.g. llama3.2"
+                       Height="36"
+                       CornerRadius="6"
+                       VerticalContentAlignment="Center"/>
+              <Button Grid.Column="1"
+                      Content="Install"
+                      Classes="AccentButton"
+                      Margin="8,0,0,0"
+                      Command="{Binding InstallOllamaModelCommand}"
+                      IsEnabled="{Binding !!NewModelName}"/>
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding OllamaModels}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:OllamaModelItem">
+                  <Border Background="{DynamicResource SystemChromeMediumLowColor}"
+                          CornerRadius="8"
+                          Padding="12,8"
+                          Margin="0,4,0,0">
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                        <TextBlock Text="active"
+                                   IsVisible="{Binding IsActive}"
+                                   Foreground="{DynamicResource SystemAccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Medium"/>
+                        <TextBlock Text="{Binding SizeText}" Opacity="0.7" FontSize="12"/>
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="Select" Classes="AccentButton" Margin="4,0"
+                              Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).SelectOllamaModelCommand}"
+                              CommandParameter="{Binding}"/>
+                      <Button Grid.Column="2" Content="Delete" Classes="DangerButton" Margin="4,0"
+                              Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DeleteOllamaModelCommand}"
+                              CommandParameter="{Binding}"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- GGUF catalog section -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000"
+                Padding="20">
+          <StackPanel Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <material:MaterialIcon Kind="CloudDownloadOutline" Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="GGUF catalog (HuggingFace)"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+            <TextBlock Text="Download quantized GGUF models to use with a local runtime. Imported models can be registered in Ollama."
+                     Opacity="0.7" TextWrapping="Wrap"/>
+
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Text="{Binding CatalogSearchQuery}"
+                       PlaceholderText="Search HuggingFace, e.g. llama 3.2"
+                       Height="36"
+                       CornerRadius="6"
+                       VerticalContentAlignment="Center"/>
+              <Button Grid.Column="1"
+                      Content="Search"
+                      Classes="AccentButton"
+                      Margin="8,0,0,0"
+                      Command="{Binding SearchCatalogCommand}"
+                      IsEnabled="{Binding !!CatalogSearchQuery}"/>
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding CatalogModels}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:CatalogModelItem">
+                  <Border Background="{DynamicResource SystemChromeMediumLowColor}"
+                          CornerRadius="12"
+                          BoxShadow="0 2 8 0 #30000000"
+                          Margin="0,8,0,0"
+                          Padding="20">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto" ColumnDefinitions="*,Auto">
+                      <!-- Model Name -->
+                      <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="{Binding Info.Name}"
+                           FontSize="18"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,8"/>
+
+                      <!-- Model Info -->
+                      <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="16" Margin="0,0,0,8">
+                        <TextBlock Text="{Binding Info.SizeText}" Opacity="0.7"/>
+                        <TextBlock Text="{Binding Info.Quantization}" Foreground="{DynamicResource SystemAccentColor}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <Border Width="12"
+                                  Height="12"
+                                  Background="{Binding StatusBrush}"
+                                  CornerRadius="6"
+                                  VerticalAlignment="Center"/>
+                          <TextBlock Text="{Binding Status}" Opacity="0.7"/>
+                        </StackPanel>
+                      </StackPanel>
+
+                      <!-- Model Description -->
+                      <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                           Text="{Binding Info.Description}"
+                           TextWrapping="Wrap"
+                           Opacity="0.7"
+                           Margin="0,0,0,8"/>
+
+                      <!-- Download Progress -->
+                      <StackPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                            IsVisible="{Binding IsDownloading}">
+                        <TextBlock Text="Downloading..."
+                             Margin="0,0,0,8"
+                             FontWeight="SemiBold"
+                             Foreground="{DynamicResource SystemAccentColor}"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                          <ProgressBar Grid.Column="0" Value="{Binding Progress}"
+                                 Maximum="100"
+                                 Height="8"
+                                 Foreground="{DynamicResource SystemAccentColor}"/>
+                          <Button Grid.Column="1"
+                            Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).CancelDownloadCommand}"
+                            CommandParameter="{Binding}"
+                            Content="Cancel"
+                            Margin="8,0,0,0"
+                            Classes="DangerButton"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ProgressText}"
+                             HorizontalAlignment="Right"
+                             Margin="0,4,0,0"
+                             FontSize="12"/>
+                      </StackPanel>
+
+                      <!-- Action Buttons -->
+                      <StackPanel Grid.Row="3" Grid.Column="1"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8">
+                        <Button Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DownloadCatalogModelCommand}"
+                          CommandParameter="{Binding}"
+                          Content="Download"
+                          Classes="AccentButton"
+                          IsVisible="{Binding CanDownload}"/>
+                        <Button Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).ImportGgufCommand}"
+                          CommandParameter="{Binding}"
+                          Content="Import to Ollama"
+                          IsVisible="{Binding IsDownloaded}"/>
+                        <Button Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DeleteGgufCommand}"
+                          CommandParameter="{Binding}"
+                          Content="Delete"
+                          Classes="DangerButton"
+                          IsVisible="{Binding IsDownloaded}"/>
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Whisper speech models section -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000"
+                Padding="20">
+          <StackPanel Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <material:MaterialIcon Kind="Microphone" Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="Speech models (Whisper)"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+            <TextBlock Text="Local speech-to-text models used for voice input. Larger models are more accurate but slower."
+                     Opacity="0.7" TextWrapping="Wrap"/>
+
+            <ItemsControl ItemsSource="{Binding WhisperModels}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:WhisperModelItem">
+                  <Border Background="{DynamicResource SystemChromeMediumLowColor}"
+                          CornerRadius="8"
+                          Padding="12,8"
+                          Margin="0,4,0,0">
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                      <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding SizeText}" Opacity="0.7" FontSize="12"/>
+                        <TextBlock Text="active"
+                                   IsVisible="{Binding IsActive}"
+                                   Foreground="{DynamicResource SystemAccentColor}"
+                                   FontSize="12"
+                                   FontWeight="Medium"/>
+                        <ProgressBar Value="{Binding Progress}" Maximum="100" Width="120" Height="6"
+                                     IsVisible="{Binding IsDownloading}"
+                                     Foreground="{DynamicResource SystemAccentColor}"/>
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="Use" Classes="AccentButton" Margin="4,0"
+                              IsVisible="{Binding IsDownloaded}"
+                              Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).SelectWhisperCommand}"
+                              CommandParameter="{Binding}"/>
+                      <Button Grid.Column="2" Content="Download" Classes="AccentButton" Margin="4,0"
+                              IsVisible="{Binding !IsDownloaded}"
+                              Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DownloadWhisperCommand}"
+                              CommandParameter="{Binding}"/>
+                      <Button Grid.Column="3" Content="Delete" Classes="DangerButton" Margin="4,0"
+                              IsVisible="{Binding IsDownloaded}"
+                              Command="{Binding $parent[ItemsControl].((vm:ModelsViewModel)DataContext).DeleteWhisperCommand}"
+                              CommandParameter="{Binding}"/>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+
+  <UserControl.Styles>
+    <Style Selector="Button.DangerButton">
+      <Setter Property="Background" Value="#e74c3c"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="Button.DangerButton:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#c0392b"/>
+    </Style>
+  </UserControl.Styles>
+</UserControl>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31903.59
+# Visual Studio Version 18
+VisualStudioVersion = 18.10.12306.391 oobstable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexi.UI", "Nexi.UI\Nexi.UI.csproj", "{774F3A0A-21BC-4F2B-9735-7D19DCB33295}"
 EndProject
@@ -71,5 +71,8 @@ Global
 		{9C625842-35A9-49B4-A761-54472D6EFFE0} = {F46C7E0C-7F85-469D-8820-4BF7CC147909}
 		{4E8A3262-6CE5-4F98-B727-301543E6174A} = {CDC4501C-A8AC-40E4-81A6-F65AA09BAEBF}
 		{CCCF6E9F-D1AD-49F2-B2B4-994B710A8920} = {CDC4501C-A8AC-40E4-81A6-F65AA09BAEBF}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F739FDC6-A665-449E-B26C-7C2B20435BA1}
 	EndGlobalSection
 EndGlobal

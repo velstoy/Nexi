@@ -1,0 +1,163 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Nexi.UI.ViewModels"
+             xmlns:material="using:Material.Icons.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="Nexi.UI.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Header -->
+    <Border Grid.Row="0"
+            Background="{DynamicResource SystemChromeMediumColor}"
+            BoxShadow="0 2 8 0 #30000000">
+      <Grid ColumnDefinitions="*,Auto" Margin="32,24">
+        <StackPanel Grid.Column="0" Spacing="8">
+          <TextBlock Text="Settings"
+                   FontFamily="Cascadia Code"
+                   FontSize="32"
+                   FontWeight="SemiBold"
+                   Foreground="{DynamicResource SystemAccentColor}"/>
+          <TextBlock Text="Configure your Nexi experience"
+                   FontSize="16"
+                   Opacity="0.7"/>
+        </StackPanel>
+        <Button Grid.Column="1"
+                Content="Save"
+                Classes="AccentButton"
+                VerticalAlignment="Center"
+                Command="{Binding SaveSettingsCommand}"/>
+      </Grid>
+    </Border>
+
+    <!-- Settings Content -->
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Margin="32" Spacing="24">
+        <!-- AI Provider Settings -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000">
+          <StackPanel Margin="24,20">
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+              <material:MaterialIcon Kind="Brain"
+                                   Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="AI Provider Settings"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+
+            <StackPanel Spacing="16">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Provider" Opacity="0.7"/>
+                <ComboBox SelectedItem="{Binding SelectedProvider}"
+                          ItemsSource="{Binding Providers}"
+                          Width="300"
+                          HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding ProviderDisplay}" FontSize="12" Opacity="0.6"/>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Model" Opacity="0.7"/>
+                <TextBox Text="{Binding Model}"
+                         PlaceholderText="e.g. llama3.2 or gpt-4o-mini"
+                         Width="300"
+                         HorizontalAlignment="Left"/>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="API key (cloud providers only - stored locally)" Opacity="0.7"/>
+                <TextBox Text="{Binding ApiKey}"
+                         PlaceholderText="sk-..."
+                         Width="300"
+                         HorizontalAlignment="Left"/>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Endpoint URL" Opacity="0.7"/>
+                <TextBox Text="{Binding BaseUrl}"
+                         PlaceholderText="http://localhost:11434 or https://api.openai.com/v1"
+                         Width="300"
+                         HorizontalAlignment="Left"/>
+              </StackPanel>
+
+              <TextBlock Text="Note: install local models on the Models page. The built-in local assistant works with no configuration."
+                       Opacity="0.7"
+                       TextWrapping="Wrap"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Voice Settings -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000">
+          <StackPanel Margin="24,20">
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+              <material:MaterialIcon Kind="Microphone"
+                                   Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="Voice Settings"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+
+            <StackPanel Spacing="16">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Microphone" Opacity="0.7"/>
+                <ComboBox SelectedIndex="{Binding SelectedInputDeviceIndex}"
+                        ItemsSource="{Binding InputDevices}"
+                        Width="300"
+                        HorizontalAlignment="Left"/>
+                <TextBlock Text="Only connected microphones will be shown in this list (-1 = system default)"
+                         Opacity="0.6"
+                         FontSize="12"/>
+              </StackPanel>
+
+              <StackPanel Spacing="8">
+                <TextBlock Text="Speech model (Whisper)" Opacity="0.7"/>
+                <ComboBox Width="300"
+                          HorizontalAlignment="Left"
+                          SelectedItem="{Binding SelectedSpeechModelFile}"
+                          ItemsSource="{Binding SpeechModelsFileNames}"/>
+                <TextBlock Text="Download speech models on the Models page. The active model is used for voice input."
+                         Opacity="0.6"
+                         FontSize="12"
+                         TextWrapping="Wrap"/>
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Interface Settings -->
+        <Border Background="{DynamicResource SystemChromeMediumColor}"
+                CornerRadius="12"
+                BoxShadow="0 2 8 0 #30000000">
+          <StackPanel Margin="24,20">
+            <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+              <material:MaterialIcon Kind="Palette"
+                                   Width="24" Height="24"
+                                   Foreground="{DynamicResource SystemAccentColor}"/>
+              <TextBlock Text="Interface Settings"
+                       FontSize="20"
+                       FontWeight="SemiBold"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="Theme"
+                      VerticalAlignment="Center"
+                      Width="120"/>
+              <ComboBox SelectedItem="{Binding SelectedTheme}"
+                     Width="200"
+                     ItemsSource="{Binding ThemeOptions}"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <TextBlock Text="{Binding StatusText}" FontSize="12" Opacity="0.6"/>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

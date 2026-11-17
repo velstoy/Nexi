@@ -1,10 +1,29 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="Nexi.UI.App"
-             RequestedThemeVariant="Default">
-             <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+             xmlns:material="using:Material.Icons.Avalonia"
+             xmlns:converters="using:Nexi.UI.Converters"
+             RequestedThemeVariant="Dark">
 
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
+  <Application.Resources>
+    <converters:BoolToBackgroundConverter x:Key="BoolToBackgroundConverter"/>
+    <converters:BoolToAlignmentConverter x:Key="BoolToAlignmentConverter"/>
+    <converters:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
+    <converters:BoolToSystemMessageBackgroundConverter x:Key="BoolToSystemMessageBackgroundConverter"/>
+    <converters:BoolToSystemMessageForegroundConverter x:Key="BoolToSystemMessageForegroundConverter"/>
+    <converters:BoolToStatusBrushConverter x:Key="BoolToStatusBrushConverter"/>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#A880E4"/>
+        <ColorPaletteResources x:Key="Dark" Accent="#A880E4"/>
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <material:MaterialIconStyles />
+
+    <StyleInclude Source="/Styles/TransparentButton.axaml"/>
+    <StyleInclude Source="/Styles/AccentButton.axaml"/>
+  </Application.Styles>
 </Application>
